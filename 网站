@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高明博 | 100M Sprinter</title>
+    <style>
+        /* ================== 核心配置 ================== */
+        :root {
+            --primary: #ff4757; /* 跑道红 */
+            --glass-bg: rgba(20, 20, 20, 0.6); /* 卡片半透明黑 */
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-white: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: var(--text-white);
+            background-color: #000;
+        }
+
+        /* --- 1. 背景设置 (使用田径场图片) --- */
+        .fixed-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            
+            /* 田径场背景图片 */
+            background-image: url('https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=2000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+
+        /* --- 2. 布局容器 --- */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* --- 3. 头部信息 --- */
+        header {
+            min-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .name {
+            font-size: 4.5rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            margin: 0;
+            text-transform: uppercase;
+            background: linear-gradient(to right, #fff, #999);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .info-tag {
+            font-size: 1.2rem;
+            color: var(--primary);
+            font-weight: bold;
+            margin-top: 10px;
+            letter-spacing: 2px;
+        }
+
+        .bio {
+            color: #ccc;
+            margin-top: 10px;
+            font-size: 1rem;
+            max-width: 600px;
+        }
+
+        .stats-wrapper {
+            display: flex;
+            gap: 50px;
+            margin-top: 60px;
+        }
+        
+        .stat-box h2 {
+            font-size: 4rem;
+            margin: 0;
+            line-height: 1;
+            font-weight: 800;
+            font-style: italic;
+        }
+        .stat-box p {
+            margin: 10px 0 0 0;
+            font-size: 0.9rem;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        /* --- 4. 学习板块 --- */
+        .learning-section { padding: 80px 0 120px 0; }
+        
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 40px;
+            border-left: 5px solid var(--primary);
+            padding-left: 20px;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 35px;
+            cursor: pointer;
+            transition: 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .card h3 { margin: 15px 0 10px 0; font-size: 1.3rem; color: #fff; }
+        .card p { margin: 0; font-size: 0.9rem; color: #aaa; }
+        .card-icon { font-size: 1.8rem; }
+
+        /* --- 5. 弹窗样式 --- */
+        .modal-overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .modal-content {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 40px;
+            background: #111;
+            border: 1px solid #333;
+            border-radius: 20px;
+            animation: fadeIn 0.4s;
+        }
+        .close-btn {
+            position: fixed; top: 30px; right: 40px;
+            font-size: 40px; color: #666; cursor: pointer;
+        }
+        .close-btn:hover { color: #fff; }
+
+        /* --- 6. 文件上传和展示区域样式 --- */
+        .file-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .file-upload-area {
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(255,71,87,0.1);
+        }
+
+        .file-list {
+            margin-top: 20px;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            transition: background 0.3s ease;
+        }
+
+        .file-item:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .file-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-icon {
+            font-size: 1.2rem;
+        }
+
+        .file-actions button {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+
+        .file-actions button:hover {
+            opacity: 0.8;
+        }
+
+        @keyframes fadeIn { 
+            from {opacity: 0; transform: translateY(20px);} 
+            to {opacity: 1; transform: translateY(0);} 
+        }
+        
+        @media (max-width: 768px) {
+            .name { font-size: 3rem; }
+            .stats-wrapper { flex-direction: column; gap: 30px; }
+            .modal-content { padding: 20px; margin: 60px auto; }
+            .file-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .file-actions { align-self: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="fixed-bg"></div>
+    <div class="overlay"></div>
+
+    <div class="container">
+        <header>
+            <h1 class="name">高明博</h1>
+            <div class="info-tag">SPRINTER / 100M ATHLETE</div>
+            <div class="bio">
+                <p>2008.06.16 · Grade 10 · ShenZhen</p>
+                <p>Running is not just about speed, it's about logic and physics.</p>
+            </div>
+
+            <div class="stats-wrapper">
+                <div class="stat-box">
+                    <h2 style="color: var(--primary);">12.12<span style="font-size:2rem">s</span></h2>
+                    <p>PERSONAL BEST (PB)</p>
+                </div>
+                <div class="stat-box">
+                    <h2>2025</h2>
+                    <p>TRAINING START</p>
+                </div>
+            </div>
+        </header>
+
+        <div class="learning-section">
+            <h2 class="section-title">ACADEMIC NOTES / 学习笔记</h2>
+            <div class="grid">
+                <div class="card" onclick="openNote('math')">
+                    <div class="card-icon">📐</div>
+                    <h3>数学笔记</h3>
+                    <p>Math & Logic</p>
+                </div>
+                <div class="card" onclick="openNote('physics')">
+                    <div class="card-icon">⚡</div>
+                    <h3>物理探究</h3>
+                    <p>Physics & Mechanics</p>
+                </div>
+                <div class="card" onclick="openNote('chemistry')">
+                    <div class="card-icon">🧪</div>
+                    <h3>化学总结</h3>
+                    <p>Chemistry & Energy</p>
+                </div>
+                <div class="card" onclick="openNote('biology')">
+                    <div class="card-icon">🧬</div>
+                    <h3>生物随笔</h3>
+                    <p>Biology & Body</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal" class="modal-overlay">
+        <div class="close-btn" onclick="closeNote()">&times;</div>
+        <div class="modal-content" id="modal-text"></div>
+    </div>
+
+    <script>
+        // 存储各学科文件的全局对象
+        const subjectFiles = {
+            math: JSON.parse(localStorage.getItem('mathFiles')) || [],
+            physics: JSON.parse(localStorage.getItem('physicsFiles')) || [],
+            chemistry: JSON.parse(localStorage.getItem('chemistryFiles')) || [],
+            biology: JSON.parse(localStorage.getItem('biologyFiles')) || []
+        };
+
+        const notesData = {
+            'math': `
+                <h1 style="color:#ff4757">📐 数学笔记</h1>
+                <p style="color:#666">更新时间：2025.11</p>
+                <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+                <div style="line-height:1.8; color:#ddd;">
+                    <h3>三角函数与节奏</h3>
+                    <p>百米的步频实际上就像正弦波一样有规律。我正在复习三角函数的诱导公式，利用单位圆来理解数值变化，这比死记硬背快得多。</p>
+                    <h3>立体几何</h3>
+                    <p>重点整理了"线面垂直"的判定定理。在训练中，身体躯干与地面的角度控制，其实就是立体几何在现实中的投影。</p>
+                    
+                    ${getFileSectionHTML('math')}
+                </div>
+            `,
+            'physics': `
+                <h1 style="color:#ff4757">⚡ 物理探究</h1>
+                <p style="color:#666">更新时间：2025.11</p>
+                <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+                <div style="line-height:1.8; color:#ddd;">
+                    <h3>起跑力学</h3>
+                    <p>根据 $F=ma$，在质量不变的情况下，蹬地力量决定加速度。我正在研究起跑器角度对水平分力的影响。</p>
+                    <h3>牛顿定律</h3>
+                    <p>每一脚落地都是一次与地面的动量交换。如何减少触地时间（减小冲量损失）是提高极速的关键。</p>
+                    
+                    ${getFileSectionHTML('physics')}
+                </div>
+            `,
+            'chemistry': `
+                <h1 style="color:#ff4757">🧪 化学总结</h1>
+                <p style="color:#666">更新时间：2025.11</p>
+                <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+                <div style="line-height:1.8; color:#ddd;">
+                    <h3>氧化还原反应</h3>
+                    <p>配平技巧核心：得失电子守恒。就像能量守恒定律一样，任何反应都不会凭空产生物质。</p>
+                    <h3>能量转化</h3>
+                    <p>研究化学能如何转化为动能，帮助理解运动中的能量代谢过程。</p>
+                    
+                    ${getFileSectionHTML('chemistry')}
+                </div>
+            `,
+            'biology': `
+                <h1 style="color:#ff4757">🧬 生物随笔</h1>
+                <p style="color:#666">更新时间：2025.11</p>
+                <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+                <div style="line-height:1.8; color:#ddd;">
+                    <h3>ATP-CP 系统</h3>
+                    <p>短跑前几秒完全依靠磷酸肌酸供能。了解这个机制让我明白为什么组间休息时间必须足够长（以便ATP合成）。</p>
+                    <h3>乳酸阈值</h3>
+                    <p>虽然100米是无氧运动，但耐乳酸训练能帮助我在接力或者200米兼项中保持后程不掉速。</p>
+                    
+                    ${getFileSectionHTML('biology')}
+                </div>
+            `
+        };
+
+        // 生成文件管理区域的HTML
+        function getFileSectionHTML(subject) {
+            const subjectNames = {
+                math: '数学',
+                physics: '物理', 
+                chemistry: '化学',
+                biology: '生物'
+            };
+            
+            return `
+                <div class="file-section">
+                    <h3 style="color:#ff4757; margin-bottom:20px;">📁 ${subjectNames[subject]}文件管理</h3>
+                    
+                    <div class="file-upload-area" id="${subject}UploadArea" onclick="document.getElementById('${subject}FileInput').click()">
+                        <div style="font-size:3rem; margin-bottom:10px;">📤</div>
+                        <p>点击或拖拽文件到此区域上传</p>
+                        <p style="font-size:0.8rem; color:#888;">支持PDF、图片、文档等格式</p>
+                    </div>
+                    
+                    <input type="file" id="${subject}FileInput" multiple style="display:none;" onchange="handleFileUpload('${subject}', this.files)">
+                    
+                    <div class="file-list" id="${subject}FileList">
+                        <p style="color:#888; text-align:center;">暂无文件</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openNote(type) {
+            document.getElementById('modal-text').innerHTML = notesData[type];
+            document.getElementById('modal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            
+            // 初始化文件区域
+            setTimeout(() => initFileSection(type), 100);
+        }
+
+        function closeNote() {
+            document.getElementById('modal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // 初始化文件区域
+        function initFileSection(subject) {
+            const uploadArea = document.getElementById(`${subject}UploadArea`);
+            const fileList = document.getElementById(`${subject}FileList`);
+            
+            if (uploadArea) {
+                setupDragAndDrop(uploadArea, subject);
+            }
+            
+            displayFiles(subject);
+        }
+
+        // 设置拖拽功能
+        function setupDragAndDrop(uploadArea, subject) {
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', function() {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                handleFileUpload(subject, e.dataTransfer.files);
+            });
+        }
+
+        // 处理文件上传
+        function handleFileUpload(subject, files) {
+            if (files.length === 0) return;
+            
+            Array.from(files).forEach(file => {
+                if (file.size > 10 * 1024 * 1024) {
+                    alert('文件大小不能超过10MB');
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const newFile = {
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        type: file.type,
+                        size: formatFileSize(file.size),
+                        uploadTime: new Date().toLocaleString(),
+                        data: e.target.result
+                    };
+                    
+                    subjectFiles[subject].push(newFile);
+                    localStorage.setItem(`${subject}Files`, JSON.stringify(subjectFiles[subject]));
+                    displayFiles(subject);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // 显示文件列表
+        function displayFiles(subject) {
+            const fileList = document.getElementById(`${subject}FileList`);
+            const files = subjectFiles[subject];
+            
+            if (!fileList) return;
+            
+            if (files.length === 0) {
+                fileList.innerHTML = '<p style="color:#888; text-align:center;">暂无文件</p>';
+                return;
+            }
+            
+            fileList.innerHTML = files.map(file => `
+                <div class="file-item">
+                    <div class="file-name">
+                        <span class="file-icon">${getFileIcon(file.type)}</span>
+                        <div>
+                            <div>${file.name}</div>
+                            <div style="font-size:0.8rem; color:#888;">${file.size} • ${file.uploadTime}</div>
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button onclick="viewFile('${subject}', '${file.id}')">查看</button>
+                        <button onclick="downloadFile('${subject}', '${file.id}')" style="background:#666;">下载</button>
+                        <button onclick="deleteFile('${subject}', '${file.id}')" style="background:#ff4757;">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 获取文件图标
+        function getFileIcon(fileType) {
+            if (fileType.includes('pdf')) return '📄';
+            if (fileType.includes('image')) return '🖼️';
+            if (fileType.includes('word') || fileType.includes('document')) return '📝';
+            if (fileType.includes('sheet') || fileType.includes('excel')) return '📊';
+            return '📁';
+        }
+
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // 查看文件
+        function viewFile(subject, fileId) {
+            const file = subjectFiles[subject].find(f => f.id == fileId);
+            if (!file) return;
+            
+            if (file.type.includes('image') || file.type.includes('pdf')) {
+                window.open(file.data, '_blank');
+            } else {
+                downloadFile(subject, fileId);
+            }
+        }
+
+        // 下载文件
+        function downloadFile(subject, fileId) {
+            const file = subjectFiles[subject].find(f => f.id == fileId);
+            if (!file) return;
+            
+            const link = document.createElement('a');
+            link.href = file.data;
+            link.download = file.name;
+            link.click();
+        }
+
+        // 删除文件
+        function deleteFile(subject, fileId) {
+            if (confirm('确定要删除这个文件吗？')) {
+                subjectFiles[subject] = subjectFiles[subject].filter(f => f.id != fileId);
+                localStorage.setItem(`${subject}Files`, JSON.stringify(subjectFiles[subject]));
+                displayFiles(subject);
+            }
+        }
+
+        // 点击背景关闭弹窗
+        window.onclick = function(e) {
+            if (e.target == document.getElementById('modal')) closeNote();
+        }
+    </script>
+</body>
+</html>
